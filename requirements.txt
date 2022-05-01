@@ -1,0 +1,1 @@
+pytest-parametrized==1.3
