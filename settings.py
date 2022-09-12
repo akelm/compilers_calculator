@@ -1,36 +1,68 @@
-from operator import mul, truediv, add, sub
-
-from state import State
-
-# states for calculator
-states = [State(2, 1, None, 0, None, 'N'),
-          State(2, None, None, 1, None, 'N'),
-          State(2, 1, 1, 3, None, 'A'),
-          State(None, 1, 1, 3, None, 'A')]
-
-digit_collecting = [
-    (0, 1),
-    (0, 2),
-    (1, 2),
-    (2, 2)
-]
-
-operator_assignment = [
-    (2, 1),
-    (3, 1)
-]
-
-operations = {
-    '*': mul,
-    "/": truediv,
-    "+": add,
-    '-': sub,
-    '': lambda x, y: y
-}
-
-digits = '0123456789'
-starting_operators = '-'
-operators = '+/*'
-whitespaces = ' \t'
+import operator
+import string
+from enum import Enum, auto
 
 
+class TokenTypes(Enum):
+    NUMBER = auto()
+    PLUS = auto()
+    MINUS = auto()
+    MUL = auto()
+    DIV = auto()
+    LEFT_BRACKET = auto()
+    RIGHT_BRACKET = auto()
+    START = auto()
+    END = auto()
+    EMPTY = auto()
+    UNARY_MINUS = auto()
+
+
+op_dict_str = {"+": operator.add, "-": operator.sub, "*": operator.mul, "/": operator.floordiv, }
+
+assign_dict = {"+": TokenTypes.PLUS, "-": TokenTypes.MINUS, "*": TokenTypes.MUL, "/": TokenTypes.DIV,
+               "(": TokenTypes.LEFT_BRACKET, ")": TokenTypes.RIGHT_BRACKET}
+
+whitespace = " \t"
+
+all_chars = "".join(assign_dict.keys()) + whitespace + string.digits
+
+
+class SymbolTypes(Enum):
+    EXPRESSION = auto()
+    EXPRESSION_PRIM = auto()
+    TERM = auto()
+    TERM_PRIM = auto()
+    FACTOR = auto()
+    UNSIGNED_FACTOR = auto()
+    EMPTY = auto()
+
+
+parse_table = {(SymbolTypes.EXPRESSION, TokenTypes.MINUS): [SymbolTypes.TERM, SymbolTypes.EXPRESSION_PRIM],
+               (SymbolTypes.EXPRESSION, TokenTypes.LEFT_BRACKET): [SymbolTypes.TERM, SymbolTypes.EXPRESSION_PRIM],
+               (SymbolTypes.EXPRESSION, TokenTypes.NUMBER): [SymbolTypes.TERM, SymbolTypes.EXPRESSION_PRIM],
+
+               (SymbolTypes.EXPRESSION_PRIM, TokenTypes.PLUS): [TokenTypes.PLUS, SymbolTypes.TERM,
+                                                                SymbolTypes.EXPRESSION_PRIM],
+               (SymbolTypes.EXPRESSION_PRIM, TokenTypes.MINUS): [TokenTypes.MINUS, SymbolTypes.TERM,
+                                                                 SymbolTypes.EXPRESSION_PRIM],
+               (SymbolTypes.EXPRESSION_PRIM, TokenTypes.RIGHT_BRACKET): [SymbolTypes.EMPTY],
+               (SymbolTypes.EXPRESSION_PRIM, TokenTypes.END): [SymbolTypes.EMPTY],
+
+               (SymbolTypes.TERM, TokenTypes.MINUS): [SymbolTypes.FACTOR, SymbolTypes.TERM_PRIM],
+               (SymbolTypes.TERM, TokenTypes.LEFT_BRACKET): [SymbolTypes.FACTOR, SymbolTypes.TERM_PRIM],
+               (SymbolTypes.TERM, TokenTypes.NUMBER): [SymbolTypes.FACTOR, SymbolTypes.TERM_PRIM],
+
+               (SymbolTypes.TERM_PRIM, TokenTypes.PLUS): [SymbolTypes.EMPTY],
+               (SymbolTypes.TERM_PRIM, TokenTypes.MINUS): [SymbolTypes.EMPTY],
+               (SymbolTypes.TERM_PRIM, TokenTypes.RIGHT_BRACKET): [SymbolTypes.EMPTY],
+               (SymbolTypes.TERM_PRIM, TokenTypes.END): [SymbolTypes.EMPTY],
+               (SymbolTypes.TERM_PRIM, TokenTypes.MUL): [TokenTypes.MUL, SymbolTypes.FACTOR, SymbolTypes.TERM_PRIM],
+               (SymbolTypes.TERM_PRIM, TokenTypes.DIV): [TokenTypes.DIV, SymbolTypes.FACTOR, SymbolTypes.TERM_PRIM],
+
+               (SymbolTypes.FACTOR, TokenTypes.MINUS): [TokenTypes.MINUS, SymbolTypes.UNSIGNED_FACTOR],
+               (SymbolTypes.FACTOR, TokenTypes.LEFT_BRACKET): [SymbolTypes.UNSIGNED_FACTOR],
+               (SymbolTypes.FACTOR, TokenTypes.NUMBER): [SymbolTypes.UNSIGNED_FACTOR],
+
+               (SymbolTypes.UNSIGNED_FACTOR, TokenTypes.LEFT_BRACKET): [TokenTypes.LEFT_BRACKET, SymbolTypes.EXPRESSION,
+                                                                        TokenTypes.RIGHT_BRACKET],
+               (SymbolTypes.UNSIGNED_FACTOR, TokenTypes.NUMBER): [TokenTypes.NUMBER], }

@@ -8,7 +8,7 @@ Kalkulator — parser wyrażenia arytmetycznego.
 2. `git clone https://github.com/akelm/compilers_calculator.git`
 3. `cd compilers_calculator`
 4. `pip install -r requirements.txt`
-5. `python -m check_string`
+5. `python -m calculator`
 
 ### Testy
 `python -m unittest -v tests`
